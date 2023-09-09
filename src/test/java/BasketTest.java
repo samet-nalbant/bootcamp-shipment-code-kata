@@ -28,7 +28,7 @@ class BasketTest {
 
     @ParameterizedTest
     @MethodSource("shipmentSizeOfProductsAndBasketShipmentSize")
-    void shouldGetOrderShipmentSizeAsExpected(List<ShipmentSize> shipmentSizesOfProducts, ShipmentSize orderShipmentSize) {
+    void shouldGetOrderShipmentSizeAsExpected(List<ShipmentSize> shipmentSizesOfProducts, ShipmentSize orderShipmentSize) throws IllegalAccessException {
         final var products = shipmentSizesOfProducts.stream().map(Product::create).collect(Collectors.toList());
 
         basket.setProducts(products);
