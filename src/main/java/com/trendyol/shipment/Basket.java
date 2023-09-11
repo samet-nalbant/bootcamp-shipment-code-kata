@@ -3,40 +3,36 @@ package com.trendyol.shipment;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class Basket {
 
     private List<Product> products;
     private final int SHIPMENT_SIZE_THRESHOLD = 3;
 
-    public ShipmentSize getShipmentSize() throws IllegalAccessException {
+    public Optional<ShipmentSize> getShipmentSize() {
         //TO DO: Strategy design pattern can be used ?
+        if(products.size() == 0)
+            return Optional.empty();
 
-        if(products.size() == 0){
-            throw new IllegalAccessException("There is nothing in basket to get shipment size!");
-        }
+        Map<ShipmentSize, Integer> shipmentSizeCountMap = initializeShipmentSizeCountMap();
 
-        Map<ShipmentSize, Integer> shipmentSizeCountMap = new HashMap<>();
+        Optional<ShipmentSize> shipmentSizeMoreThanThreshold = shipmentSizeCountMap.keySet().stream()
+            .filter(entry -> shipmentSizeCountMap.get(entry) >= SHIPMENT_SIZE_THRESHOLD)
+            .findFirst();
 
-        initializeShipmentSizeCountMap(shipmentSizeCountMap);
+        if(shipmentSizeMoreThanThreshold.isPresent())
+            return Optional.of(getUpperShipmentSize(shipmentSizeMoreThanThreshold.get()));
 
-        for (ShipmentSize shipmentSize : shipmentSizeCountMap.keySet()){
-            if(shipmentSizeCountMap.get(shipmentSize) >= SHIPMENT_SIZE_THRESHOLD){
-                return getUpperShipmentSize(shipmentSize);
-            }
-        }
-        return getLargestShipmentSize(shipmentSizeCountMap);
+        return Optional.of(getLargestShipmentSize(shipmentSizeCountMap));
     }
 
     private ShipmentSize getLargestShipmentSize(Map<ShipmentSize, Integer> shipmentSizeCountMap) {
-        ShipmentSize largestSize = ShipmentSize.SMALL;
-
-        for(ShipmentSize shipmentSize : shipmentSizeCountMap.keySet()){
-            if(shipmentSizeCountMap.get(shipmentSize) > 0 && getShipmentSizeOrder(shipmentSize) > getShipmentSizeOrder(largestSize)){
-                largestSize = shipmentSize;
-            }
-        }
-        return largestSize;
+        return shipmentSizeCountMap.keySet().stream()
+            .filter(shipmentSize -> shipmentSizeCountMap.get(shipmentSize) > 0)
+            .max((shipmentSize1, shipmentSize2) -> 
+                Integer.compare(getShipmentSizeOrder(shipmentSize1), getShipmentSizeOrder(shipmentSize2)))
+            .orElse(ShipmentSize.SMALL);
     }
 
     private int getShipmentSizeOrder(ShipmentSize shipmentSize){
@@ -50,26 +46,27 @@ public class Basket {
             case X_LARGE:
                 return 3;
             default:
-                throw new IllegalArgumentException("Unrecognized shipment size!");
+                throw new IllegalArgumentException("Unrecognized shipment size: " + shipmentSize);
         }
     }
 
-    private void initializeShipmentSizeCountMap(Map<ShipmentSize, Integer> shipmentSizeCountMap){
-        //TO DO: It could be initialized once and update ?
+    private Map<ShipmentSize, Integer> initializeShipmentSizeCountMap(){
+        Map <ShipmentSize, Integer> shipmentSizeCountMap = new HashMap<>();
+
+        for(ShipmentSize shipmentSize : ShipmentSize.values()){
+            shipmentSizeCountMap.put(shipmentSize, 0);
+        }
+
         for(Product product : products){
-            ShipmentSize currentProductSize = product.getSize();
-            if(shipmentSizeCountMap.containsKey(currentProductSize)){
-                int currentProductSizeCount = shipmentSizeCountMap.get(currentProductSize);
-                shipmentSizeCountMap.put(currentProductSize , currentProductSizeCount +1);
-            }
-            else{
-                shipmentSizeCountMap.put(currentProductSize, 1);
-            }
+            int currentProductSizeCount = shipmentSizeCountMap.get(product.getSize());
+            shipmentSizeCountMap.put(product.getSize() , currentProductSizeCount + 1);
         }
+
+        return shipmentSizeCountMap;
     }
 
-    private ShipmentSize getUpperShipmentSize(ShipmentSize size){
-        switch (size){
+    private ShipmentSize getUpperShipmentSize(ShipmentSize shipmentSize){
+        switch (shipmentSize){
             case SMALL:
                 return ShipmentSize.MEDIUM;
             case MEDIUM:
@@ -78,7 +75,7 @@ public class Basket {
             case X_LARGE:
                 return  ShipmentSize.X_LARGE;
             default:
-                throw new IllegalArgumentException("Unrecognized shipment size!");
+                throw new IllegalArgumentException("Unrecognized shipment size: " + shipmentSize);
         }
     }
 

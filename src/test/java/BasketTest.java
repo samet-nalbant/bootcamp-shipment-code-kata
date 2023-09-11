@@ -28,12 +28,12 @@ class BasketTest {
 
     @ParameterizedTest
     @MethodSource("shipmentSizeOfProductsAndBasketShipmentSize")
-    void shouldGetOrderShipmentSizeAsExpected(List<ShipmentSize> shipmentSizesOfProducts, ShipmentSize orderShipmentSize) throws IllegalAccessException {
+    void shouldGetOrderShipmentSizeAsExpected(List<ShipmentSize> shipmentSizesOfProducts, ShipmentSize orderShipmentSize) {
         final var products = shipmentSizesOfProducts.stream().map(Product::create).collect(Collectors.toList());
 
         basket.setProducts(products);
 
-        assertThat(basket.getShipmentSize(), equalTo(orderShipmentSize));
+        assertThat(basket.getShipmentSize().get(), equalTo(orderShipmentSize));
     }
 
     private static Stream<Arguments> shipmentSizeOfProductsAndBasketShipmentSize() {
